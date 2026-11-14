@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Trivia de cultura general</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: system-ui, sans-serif;
+        color: #172554;
+        background: #eff6ff;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        padding: 1.5rem;
+      }
+
+      main {
+        width: min(100%, 38rem);
+        padding: 2rem;
+        border-radius: 1rem;
+        background: white;
+        box-shadow: 0 1rem 2.5rem #1e3a8a1a;
+      }
+
+      h1 {
+        margin-top: 0;
+      }
+
+      #progreso,
+      #puntaje {
+        color: #475569;
+      }
+
+      #opciones {
+        display: grid;
+        gap: 0.75rem;
+        margin: 1.5rem 0;
+      }
+
+      button {
+        border: 1px solid #bfdbfe;
+        border-radius: 0.6rem;
+        padding: 0.85rem 1rem;
+        color: #1e3a8a;
+        background: #eff6ff;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      button:hover:not(:disabled) {
+        background: #dbeafe;
+      }
+
+      button:disabled {
+        cursor: default;
+        opacity: 0.7;
+      }
+
+      #siguiente {
+        display: none;
+        color: white;
+        background: #1d4ed8;
+      }
+
+      #mensaje {
+        min-height: 1.5em;
+        font-weight: 600;
+      }
+
+      #mensaje.error {
+        color: #b91c1c;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Trivia de cultura general</h1>
+      <p id="progreso" aria-live="polite">Cargando preguntas…</p>
+      <h2 id="pregunta"></h2>
+      <div id="opciones" aria-label="Opciones de respuesta"></div>
+      <p id="mensaje" aria-live="polite"></p>
+      <p id="puntaje">Puntaje: 0</p>
+      <button id="siguiente" type="button">Siguiente pregunta</button>
+    </main>
+    <script>
+      const progreso = document.querySelector("#progreso");
+      const preguntaTexto = document.querySelector("#pregunta");
+      const opciones = document.querySelector("#opciones");
+      const mensaje = document.querySelector("#mensaje");
+      const puntajeTexto = document.querySelector("#puntaje");
+      const siguiente = document.querySelector("#siguiente");
+      let preguntas = [];
+      let indice = 0;
+      let puntaje = 0;
+
+      function mostrarPregunta() {
+        if (indice >= preguntas.length) {
+          progreso.textContent = "Trivia completada";
+          preguntaTexto.textContent = "¡Gracias por jugar!";
+          opciones.replaceChildren();
+          siguiente.hidden = true;
+          siguiente.style.display = "none";
+          return;
+        }
+
+        const pregunta = preguntas[indice];
+        progreso.textContent = `Pregunta ${indice + 1} de ${preguntas.length}`;
+        preguntaTexto.textContent = pregunta.texto;
+        mensaje.textContent = "";
+        mensaje.classList.remove("error");
+        opciones.replaceChildren();
+
+        pregunta.opciones.forEach((opcion, indiceOpcion) => {
+          const boton = document.createElement("button");
+          boton.type = "button";
+          boton.textContent = opcion;
+          boton.addEventListener("click", () => enviarRespuesta(pregunta.id, indiceOpcion));
+          opciones.append(boton);
+        });
+      }
+
+      async function enviarRespuesta(id, opcion) {
+        opciones.querySelectorAll("button").forEach((boton) => {
+          boton.disabled = true;
+        });
+
+        try {
+          const respuesta = await fetch("/api/responder", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, opcion }),
+          });
+          if (!respuesta.ok) {
+            throw new Error(`Error al enviar la respuesta (${respuesta.status}).`);
+          }
+
+          const resultado = await respuesta.json();
+          if (resultado.correcta) {
+            puntaje += 1;
+            mensaje.textContent = "¡Correcto!";
+          } else {
+            const correcta = preguntas[indice].opciones[resultado.respuesta_correcta];
+            mensaje.textContent = `Incorrecto. La respuesta correcta es: ${correcta}`;
+          }
+
+          puntajeTexto.textContent = `Puntaje: ${puntaje}`;
+          siguiente.style.display = "inline-block";
+        } catch (error) {
+          mensaje.textContent = error.message;
+          mensaje.classList.add("error");
+          opciones.querySelectorAll("button").forEach((boton) => {
+            boton.disabled = false;
+          });
+        }
+      }
+
+      siguiente.addEventListener("click", () => {
+        indice += 1;
+        siguiente.style.display = "none";
+        mostrarPregunta();
+      });
+
+      async function iniciarTrivia() {
+        try {
+          const respuesta = await fetch("/api/preguntas");
+          if (!respuesta.ok) {
+            throw new Error(`Error al cargar las preguntas (${respuesta.status}).`);
+          }
+          preguntas = await respuesta.json();
+          mostrarPregunta();
+        } catch (error) {
+          progreso.textContent = "No se pudo iniciar la trivia.";
+          mensaje.textContent = error.message;
+          mensaje.classList.add("error");
+        }
+      }
+
+      iniciarTrivia();
+    </script>
+  </body>
+</html>

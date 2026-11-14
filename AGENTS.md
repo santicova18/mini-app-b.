@@ -1,6 +1,6 @@
 # AGENTS.md
 ## Proyecto
-Mini-aplicación de práctica:  Trivia de cultura general. Datos ficticios en memoria, sin base de datos.
+Mini-aplicación de práctica: Trivia de cultura general. Datos ficticios en memoria, sin base de datos.
 ## Stack
 - Python 3.14, FastAPI y plantillas Jinja2
 - pytest con TestClient, Ruff
