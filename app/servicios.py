@@ -55,14 +55,14 @@ _PREGUNTAS: list[Pregunta] = [
 ]
 
 
-def listar_preguntas() -> list[PreguntaPublica]:
+def listar_preguntas(cantidad: int = 5) -> list[PreguntaPublica]:
     return [
         {
             "id": pregunta["id"],
             "texto": pregunta["texto"],
             "opciones": pregunta["opciones"],
         }
-        for pregunta in _PREGUNTAS
+        for pregunta in _PREGUNTAS[:cantidad]
     ]
 
 

@@ -37,19 +37,29 @@
         color: #475569;
       }
 
+      #configuracion {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
       #opciones {
         display: grid;
         gap: 0.75rem;
         margin: 1.5rem 0;
       }
 
-      button {
+      button,
+      select {
         border: 1px solid #bfdbfe;
         border-radius: 0.6rem;
         padding: 0.85rem 1rem;
         color: #1e3a8a;
         background: #eff6ff;
         font: inherit;
+      }
+
+      button {
         text-align: left;
         cursor: pointer;
       }
@@ -82,7 +92,18 @@
   <body>
     <main>
       <h1>Trivia de cultura general</h1>
-      <p id="progreso" aria-live="polite">Cargando preguntas…</p>
+      <div id="configuracion">
+        <label for="cantidad">Cantidad de preguntas:</label>
+        <select id="cantidad">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5" selected>5</option>
+        </select>
+        <button id="iniciar" type="button">Iniciar trivia</button>
+      </div>
+      <p id="progreso" aria-live="polite">Elige cuántas preguntas quieres jugar.</p>
       <h2 id="pregunta"></h2>
       <div id="opciones" aria-label="Opciones de respuesta"></div>
       <p id="mensaje" aria-live="polite"></p>
@@ -96,6 +117,9 @@
       const mensaje = document.querySelector("#mensaje");
       const puntajeTexto = document.querySelector("#puntaje");
       const siguiente = document.querySelector("#siguiente");
+      const configuracion = document.querySelector("#configuracion");
+      const selectorCantidad = document.querySelector("#cantidad");
+      const iniciar = document.querySelector("#iniciar");
       let preguntas = [];
       let indice = 0;
       let puntaje = 0;
@@ -169,10 +193,13 @@
 
       async function iniciarTrivia() {
         try {
-          const respuesta = await fetch("/api/preguntas");
+          const respuesta = await fetch(
+            `/api/preguntas?cantidad=${encodeURIComponent(selectorCantidad.value)}`,
+          );
           if (!respuesta.ok) {
             throw new Error(`Error al cargar las preguntas (${respuesta.status}).`);
           }
+          configuracion.hidden = true;
           preguntas = await respuesta.json();
           mostrarPregunta();
         } catch (error) {
@@ -182,7 +209,7 @@
         }
       }
 
-      iniciarTrivia();
+      iniciar.addEventListener("click", iniciarTrivia);
     </script>
   </body>
 </html>

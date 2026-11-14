@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
@@ -23,8 +23,8 @@ def pagina_principal(request: Request):
 
 
 @app.get("/api/preguntas")
-def obtener_preguntas():
-    return servicios.listar_preguntas()
+def obtener_preguntas(cantidad: int = Query(default=5, ge=1, le=5)):
+    return servicios.listar_preguntas(cantidad)
 
 
 @app.post("/api/responder")
